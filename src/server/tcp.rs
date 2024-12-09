@@ -51,9 +51,12 @@ pub fn create_tcp_server(
         .run()
 }
 
-async fn handle_new_client(acceptor: TlsAcceptor,
-                     server_version: Version,
-                     state: Arc<RwLock<ServerState>>, stream: TcpStream) -> Result<(), anyhow::Error> {
+async fn handle_new_client(
+    acceptor: TlsAcceptor,
+    server_version: Version,
+    state: Arc<RwLock<ServerState>>,
+    stream: TcpStream,
+) -> Result<(), anyhow::Error> {
     stream.set_nodelay(true).context("set stream no delay")?;
 
     let mut stream = acceptor.accept(stream).await.context("accept tls")?;
@@ -64,13 +67,11 @@ async fn handle_new_client(acceptor: TlsAcceptor,
 
     let username = authenticate.get_username().to_string();
     let client = {
-        state.write_err().await.context("add client to server")?.add_client(
-            version,
-            authenticate,
-            crypt_state,
-            write,
-            tx,
-        )
+        state
+            .write_err()
+            .await
+            .context("add client to server")?
+            .add_client(version, authenticate, crypt_state, write, tx)
     };
 
     crate::metrics::CLIENTS_TOTAL.inc();
@@ -85,7 +86,13 @@ async fn handle_new_client(acceptor: TlsAcceptor,
     tracing::info!("client {} disconnected", username);
 
     let (client_id, channel_id) = {
-        state.write_err().await.context("wait state for disconnect user")?.disconnect(client).await.context("disconnect user")?
+        state
+            .write_err()
+            .await
+            .context("wait state for disconnect user")?
+            .disconnect(client)
+            .await
+            .context("disconnect user")?
     };
 
     crate::metrics::CLIENTS_TOTAL.dec();
@@ -96,7 +103,8 @@ async fn handle_new_client(acceptor: TlsAcceptor,
             .await
             .context("wait state for remove client")?
             .remove_client(client_id, channel_id)
-            .await.context("remove client")?;
+            .await
+            .context("remove client")?;
     }
 
     Ok(())

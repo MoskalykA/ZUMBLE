@@ -21,15 +21,12 @@ impl Handler for UserState {
         }
 
         if self.has_channel_id() {
-            let leave_channel_id = match state
+            let leave_channel_id = (state
                 .read_err()
                 .await?
                 .set_client_channel(client.clone(), self.get_channel_id())
-                .await
-            {
-                Ok(l) => l,
-                Err(_) => None,
-            };
+                .await)
+                .unwrap_or_default();
 
             if let Some(leave_channel_id) = leave_channel_id {
                 {

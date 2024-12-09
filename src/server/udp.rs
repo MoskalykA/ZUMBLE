@@ -35,7 +35,14 @@ async fn udp_server_run(protocol_version: u32, socket: Arc<UdpSocket>, state: Ar
     Ok(())
 }
 
-async fn handle_packet(mut buffer: BytesMut, size: usize, addr: SocketAddr, protocol_version: u32, socket: Arc<UdpSocket>, state: Arc<RwLock<ServerState>>) -> Result<(), anyhow::Error> {
+async fn handle_packet(
+    mut buffer: BytesMut,
+    size: usize,
+    addr: SocketAddr,
+    protocol_version: u32,
+    socket: Arc<UdpSocket>,
+    state: Arc<RwLock<ServerState>>,
+) -> Result<(), anyhow::Error> {
     let mut cursor = Cursor::new(&buffer[..size]);
     let kind = cursor.read_u32::<byteorder::BigEndian>()?;
 
@@ -112,17 +119,15 @@ async fn handle_packet(mut buffer: BytesMut, size: usize, addr: SocketAddr, prot
                             tracing::error!("failed to send crypt setup: {:?}", e);
                         }
 
-                        let client_address = { client.read_err().await?.udp_socket_addr.clone() };
+                        let client_address = { client.read_err().await?.udp_socket_addr };
 
                         // Remove socket address from client
                         if let Some(address) = client_address {
-                            {
-                                state
-                                    .write_err()
-                                    .await
-                                    .context("remove client by socket")?
-                                    .remove_client_by_socket(&address)
-                            };
+                            state
+                                .write_err()
+                                .await
+                                .context("remove client by socket")?
+                                .remove_client_by_socket(&address);
 
                             {
                                 client.write_err().await.context("set udp socket to null")?.udp_socket_addr = None;
@@ -138,13 +143,11 @@ async fn handle_packet(mut buffer: BytesMut, size: usize, addr: SocketAddr, prot
             let (client_opt, packet_opt, address_to_remove) = { state.read_err().await?.find_client_for_packet(&mut buffer).await? };
 
             for address in address_to_remove {
-                {
-                    state
-                        .write_err()
-                        .await
-                        .context("remove client by socket when searching for one")?
-                        .remove_client_by_socket(&address)
-                };
+                state
+                    .write_err()
+                    .await
+                    .context("remove client by socket when searching for one")?
+                    .remove_client_by_socket(&address);
             }
 
             match (client_opt, packet_opt) {

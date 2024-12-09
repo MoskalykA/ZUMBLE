@@ -3,8 +3,8 @@ use crate::proto::mumble::ChannelState;
 use crate::sync::RwLock;
 use crate::ServerState;
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct Channel {

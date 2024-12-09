@@ -7,8 +7,8 @@ use crate::voice::{Clientbound, VoicePacket};
 use crate::ServerState;
 use async_trait::async_trait;
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
 #[async_trait]
 impl Handler for VoicePacket<Clientbound> {

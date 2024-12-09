@@ -4,8 +4,8 @@ use crate::ServerState;
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 use std::time::Instant;
 
 #[derive(Serialize, Deserialize)]
