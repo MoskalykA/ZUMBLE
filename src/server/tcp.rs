@@ -60,7 +60,7 @@ async fn handle_new_client(
     stream.set_nodelay(true).context("set stream no delay")?;
 
     let mut stream = acceptor.accept(stream).await.context("accept tls")?;
-    let (version, authenticate, crypt_state) = Client::init(&mut stream, server_version).await.context("init client")?;
+    let (authenticate, crypt_state) = Client::init(&mut stream, server_version).await.context("init client")?;
 
     let (read, write) = io::split(stream);
     let (tx, rx) = mpsc::channel(128);
@@ -71,7 +71,7 @@ async fn handle_new_client(
             .write_err()
             .await
             .context("add client to server")?
-            .add_client(version, authenticate, crypt_state, write, tx)
+            .add_client(authenticate, crypt_state, write, tx)
     };
 
     crate::metrics::CLIENTS_TOTAL.inc();

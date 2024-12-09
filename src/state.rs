@@ -3,7 +3,7 @@ use crate::client::Client;
 use crate::crypt::CryptState;
 use crate::error::MumbleError;
 use crate::message::ClientMessage;
-use crate::proto::mumble::{Authenticate, ChannelRemove, ChannelState, CodecVersion, UserRemove, Version};
+use crate::proto::mumble::{Authenticate, ChannelRemove, ChannelState, CodecVersion, UserRemove};
 use crate::proto::{message_to_bytes, MessageKind};
 use crate::sync::RwLock;
 use crate::voice::{Serverbound, VoicePacket};
@@ -90,7 +90,6 @@ impl ServerState {
 
     pub fn add_client(
         &mut self,
-        version: Version,
         authenticate: Authenticate,
         crypt_state: CryptState,
         write: WriteHalf<TlsStream<TcpStream>>,
@@ -99,7 +98,6 @@ impl ServerState {
         let session_id = self.get_free_session_id();
 
         let client = Arc::new(RwLock::new(Client::new(
-            version,
             authenticate,
             session_id,
             0,

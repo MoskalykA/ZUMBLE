@@ -20,7 +20,6 @@ use tokio::time::timeout;
 use tokio_rustls::server::TlsStream;
 
 pub struct Client {
-    pub version: Version,
     pub authenticate: Authenticate,
     pub session_id: u32,
     pub channel_id: AtomicU32,
@@ -30,7 +29,6 @@ pub struct Client {
     pub tokens: Vec<String>,
     pub crypt_state: Arc<RwLock<CryptState>>,
     pub udp_socket_addr: Option<SocketAddr>,
-    pub use_opus: bool,
     pub codecs: Vec<i32>,
     pub udp_socket: Arc<UdpSocket>,
     pub publisher: Sender<ClientMessage>,
@@ -39,11 +37,8 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn init(
-        stream: &mut TlsStream<TcpStream>,
-        server_version: Version,
-    ) -> Result<(Version, Authenticate, CryptState), MumbleError> {
-        let version: Version = expected_message(MessageKind::Version, stream, 0).await?;
+    pub async fn init(stream: &mut TlsStream<TcpStream>, server_version: Version) -> Result<(Authenticate, CryptState), MumbleError> {
+        let _: Version = expected_message(MessageKind::Version, stream, 0).await?;
 
         // Send version
         send_message(MessageKind::Version, &server_version, stream).await?;
@@ -57,11 +52,10 @@ impl Client {
         // Send crypt setup
         send_message(MessageKind::CryptSetup, &crypt_setup, stream).await?;
 
-        Ok((version, authenticate, crypt))
+        Ok((authenticate, crypt))
     }
 
     pub fn new(
-        version: Version,
         authenticate: Authenticate,
         session_id: u32,
         channel_id: u32,
@@ -75,7 +69,6 @@ impl Client {
         targets.resize_with(30, Default::default);
 
         Self {
-            version,
             session_id,
             channel_id: AtomicU32::new(channel_id),
             crypt_state: Arc::new(RwLock::new(crypt_state)),
@@ -84,7 +77,6 @@ impl Client {
             deaf: false,
             mute: false,
             udp_socket_addr: None,
-            use_opus: if authenticate.has_opus() { authenticate.get_opus() } else { false },
             codecs: authenticate.get_celt_versions().to_vec(),
             authenticate,
             udp_socket,
